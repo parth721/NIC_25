@@ -1,2 +1,4 @@
 langchain
 gradio
+transfomers
+torch
