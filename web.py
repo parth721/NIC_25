@@ -16,7 +16,7 @@ tokenizer = AutoTokenizer.from_pretrained(
     pad_token="<|endoftext|>",
     eos_token="<|endoftext|>",
 )
-
+# Load the model using the local_load_model function
 
 
 chain: ConversationChain
