@@ -39,27 +39,27 @@ def slot_format(slot_dict):
     return result
 
 
-def predict(command, history: Optional[list]):
+def predict(user_message, history: Optional[list]):
     history = history or []
-    print(f"User input: {command}")
+    print(f"User input: {user_message}")
 
-    # Format the prompt with thinking mode OFF
-    formatted_prompt = tokenizer.apply_chat_template(
-        [{"role": "user", "content": command}],
-        tokenize=False,
-        add_generation_prompt=True,
-        enable_thinking=False  # 👈 This turns off thinking mode
-    )
-    print("Formatted prompt:\n", formatted_prompt)
-
-    result = chain.invoke({"input": formatted_prompt})
+    # Pass user input directly to the chain (no chat template)
+    result = chain.invoke({"input": user_message})
     print(f"Raw chain response: {result}")
     response_text = result.get("response", "No response generated.")
     print(f"Extracted text: {response_text}")
     current_slot = chain.memory.current_slots
 
-    history.append({"role": "user", "content": command})
-    history.append({"role": "assistant", "content": response_text})
+    # For gr.Chatbot, history is a list of (user, assistant) tuples
+    if len(history) > 0 and isinstance(history[0], dict):
+        # Convert from old dict format if needed
+        new_history = []
+        for i in range(0, len(history), 2):
+            user = history[i].get("content", "") if i < len(history) else ""
+            assistant = history[i+1].get("content", "") if i+1 < len(history) else ""
+            new_history.append((user, assistant))
+        history = new_history
+    history.append((user_message, response_text))
     return history, history, '', slot_format(current_slot)
 
 
@@ -73,7 +73,7 @@ if __name__ == "__main__":
 
         with gr.Row():
             with gr.Column(scale=2):
-                chatbot = gr.JSON(value=[])
+                chatbot = gr.Chatbot()
                 user_input = gr.Textbox(show_label=False, placeholder="Input...", container=False)
                 with gr.Row():
                     submitBtn = gr.Button("🚀Submit", variant="primary")
